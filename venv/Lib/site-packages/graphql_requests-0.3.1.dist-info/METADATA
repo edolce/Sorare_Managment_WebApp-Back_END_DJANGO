@@ -1,0 +1,37 @@
+Metadata-Version: 2.1
+Name: graphql-requests
+Version: 0.3.1
+Summary: GraphQL client, high performance, easy to use, sync/async support
+Home-page: https://github.com/pavelprokhorenko/graphql-client
+Author: Prokhorenko Pavel
+Author-email: prohorenkopavel74@gmail.com
+Requires-Python: >= 3.7
+Description-Content-Type: text/markdown
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: System Administrators
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Internet
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development
+Classifier: Topic :: Internet :: WWW/HTTP :: HTTP Servers
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Typing :: Typed
+Classifier: Environment :: Web Environment
+Classifier: Framework :: AsyncIO
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Dist: requests>=2,<3
+Requires-Dist: aiohttp[speedup]>=3,<4 ; extra == "async"
+Provides-Extra: async
+
+GraphQL client, high performance, easy to use, sync/async support
+
