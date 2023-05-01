@@ -4,7 +4,8 @@ import mysql.connector
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 
-from sorareBundles.scripts.init.bundleCalsses import Bundle, Card, ContestingCard
+from sorareBundles.scripts.init.bundleCalsses import Bundle, Card, ContestingCard, CardAverages
+import datetime
 
 
 # All'avvio scannare tutte le carte in possesso e confrontarle con il database per vedere se ci sono stati cambiamenti
@@ -51,6 +52,28 @@ def insertNewBundle(bundle):
     mydb.commit()
 
 
+def updateCardsAverage(averages):
+    mydb = getDatabaseConnection()
+
+    cursor = mydb.cursor()
+
+    for cardAverageKey in averages.keys():
+        sql = "INSERT INTO card_average (player_name, 3_days, 7_days, 14_days, 30_days, best_market_price, " \
+              "player_id, player_image,last_update) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) "
+        val = (cardAverageKey,
+               averages[cardAverageKey]["3_days"],
+               averages[cardAverageKey]["7_days"],
+               averages[cardAverageKey]["14_days"],
+               averages[cardAverageKey]["30_days"],
+               averages[cardAverageKey]["best_market_price"],
+               averages[cardAverageKey]["player_id"],
+               averages[cardAverageKey]["player_image"],
+               datetime.datetime.now())
+        cursor.execute(sql, val)
+
+    mydb.commit()
+
+
 ## DONE
 def insertNewContestingCard(contestingCard):
     mydb = getDatabaseConnection()
@@ -91,8 +114,6 @@ def getAllMyBundlesData():
         cursor.execute(sql, val)
         mySqlCards = cursor.fetchall()
 
-
-
         # iterate every card from the mysql feedback
         for card in mySqlCards:
 
@@ -117,20 +138,62 @@ def getAllMyBundlesData():
             mySqlContestingCards = cursor.fetchall()
 
             for contestingCard in mySqlContestingCards:
-
                 cardToAdd.contesting_cards += ContestingCard(
                     contesting_card_id=contestingCard[0],
                     card_id=contestingCard[1],
                     listing_price=contestingCard[2],
                     is_sold=contestingCard[3],
                     insertion_date=contestingCard[4],
-                               )
+                )
 
             bundleToAdd.cards.append(cardToAdd)
 
         feedbackBundles.append(bundleToAdd)
 
     return feedbackBundles
+
+
+def getCardsAverage(names):
+    # Get all the bundles in the database
+    mydb = getDatabaseConnection()
+    cursor = mydb.cursor()
+    cursor.execute("SELECT * FROM card_average")
+    cardsAverages = cursor.fetchall()
+    validCardAverage = {}
+
+    # iterate all bundles in database to get every card
+    for cardAverage in cardsAverages:
+
+        # save the bundle
+        cardAverageToAdd = CardAverages(
+            player_name=cardAverage[0],
+            _3_days=cardAverage[1],
+            _7_days=cardAverage[2],
+            _14_days=cardAverage[3],
+            _30_days=cardAverage[4],
+            best_market_price=cardAverage[5],
+            player_id=cardAverage[6],
+            player_image=cardAverage[7],
+            last_update=cardAverage[8],
+        )
+
+        if cardAverage[0] in names:
+            if cardAverageToAdd.last_update <= datetime.datetime.now() + datetime.timedelta(minutes=60):
+                validCardAverage[cardAverageToAdd.player_name] = {
+                    '3_days': cardAverageToAdd._3_days,
+                    '7_days': cardAverageToAdd._7_days,
+                    '14_days': cardAverageToAdd._14_days,
+                    '30_days': cardAverageToAdd._30_days,
+                    'best_market_price': cardAverageToAdd.best_market_price,
+                    'player_id': cardAverageToAdd.player_id,
+                    'player_image': cardAverageToAdd.player_image
+                }
+                names.remove(cardAverageToAdd.player_name)
+
+    return {
+        "valid": validCardAverage,
+        "not_valid": names
+    }
 
 
 ## NOT DATABASE

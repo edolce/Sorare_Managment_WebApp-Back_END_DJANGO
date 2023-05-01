@@ -18,13 +18,13 @@ def updateDatabaseBundlesWithSorareData():
     for sorareBundle in sorareBundles:
         if sorareBundle.bundle_slug not in databaseBundlesSlug:
             if len(sorareBundle.cards) != 5:
-                print("not a bundle: " + str(sorareBundle))
+                print("not a bundle")
                 continue
             # Trigger the not in database event
             insertNewBundle(sorareBundle)
-            print("added new bundle: " + str(sorareBundle))
+            print("added new bundle")
         else:
-            print("Already Present: " + str(sorareBundle))
+            print("Already Present")
 
 
 def getDatabaseConnection():
@@ -39,20 +39,16 @@ def getDatabaseConnection():
 def updateCardDatabase(event_id, card_id, marketInfo):
     sql = ""
     val = []
-    print(card_id)
     if event_id == 0:
         sql = "UPDATE my_card SET is_contested = %s, is_sold = %s, listing_price = %s, is_listed = %s,sold_date = STR_TO_DATE(%s,'%Y-%m-%dT%H:%i:%SZ'),last_insertion_date=STR_TO_DATE(%s,'%Y-%m-%dT%H:%i:%SZ')  WHERE id = %s; "
         val = [False, True, marketInfo.buy_price, False, marketInfo.buy_date, marketInfo.buy_date, card_id]
-        print("SOLD")
     elif event_id == 1:
         sql = "UPDATE sorareapp.my_card SET is_contested = %s, is_sold = %s, listing_price = %s, is_listed = %s,sold_date = STR_TO_DATE(%s,'%Y-%m-%dT%H:%i:%SZ'),last_insertion_date=STR_TO_DATE(%s,'%Y-%m-%dT%H:%i:%SZ')  WHERE id = %s; "
         val = [False, False, marketInfo.live_sell_offer["ownerWithRates"]["price"], True,
                marketInfo.live_sell_offer["sell_end_date"], marketInfo.live_sell_offer["sell_start_date"], card_id]
-        print("NOT LISTED -> LISTED")
     elif event_id == 2:
         sql = "UPDATE my_card SET is_contested = %s, is_sold = %s, listing_price = %s, is_listed = %s,sold_date = STR_TO_DATE(%s,'%Y-%m-%dT%H:%i:%SZ')  WHERE id = %s; "
         val = [False, False, 0, False, None, card_id]
-        print("LISTED -> NOT LISTED")
 
     mydb = getDatabaseConnection()
     cursor = mydb.cursor()
@@ -83,8 +79,6 @@ def databaseCardCheck():
             pass
         # case if the card has not sold yet
         else:
-            print(databaseCard.card_slug)
-            print(marketInfoCard.owner_slug)
             # case if the owner of the card is different (card has been sold ONLY CASE)
             if owner != marketInfoCard.owner_slug:
                 updateCardDatabase(0, databaseCard.card_id, marketInfoCard)

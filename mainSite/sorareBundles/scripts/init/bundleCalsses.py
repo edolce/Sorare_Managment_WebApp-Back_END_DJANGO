@@ -12,7 +12,7 @@ class Bundle:
 class Card:
 
     def __init__(self, card_id, bundle_id, player_name, player_rarity, is_contested, is_sold, listing_price, is_listed,
-                 last_insertion_date, contesting_cards, card_slug,player_image):
+                 last_insertion_date, contesting_cards, card_slug, player_image):
         self.card_id = card_id
         self.bundle_id = bundle_id
         self.player_name = player_name
@@ -26,6 +26,7 @@ class Card:
         self.card_slug = card_slug
         self.player_image = player_image
 
+
 class ContestingCard:
 
     def __init__(self, contesting_card_id, card_id, listing_price, is_sold, insertion_date):
@@ -38,7 +39,7 @@ class ContestingCard:
 
 class SimpleCard:
 
-    def __init__(self,display_name, price, card_slug, end_date, rarity,player_image):
+    def __init__(self, display_name, price, card_slug, end_date, rarity, player_image):
         self.price = price
         self.card_slug = card_slug
         self.end_date = end_date
@@ -56,3 +57,18 @@ class MarketInfo:
         self.owner_slug = owner_slug
         self.buy_date = buy_date
         self.buy_price = buy_price
+
+
+class CardAverages:
+
+    def __init__(self,player_name, _3_days, _7_days, _14_days, _30_days, best_market_price, player_id, player_image, last_update):
+        self.player_name = player_name
+        self._3_days = _3_days
+        self._7_days = _7_days
+        self._14_days = _14_days
+        self._30_days = _30_days
+        self.best_market_price = best_market_price
+        self.player_id = player_id
+        self.player_image = player_image
+        self.last_update = last_update
+

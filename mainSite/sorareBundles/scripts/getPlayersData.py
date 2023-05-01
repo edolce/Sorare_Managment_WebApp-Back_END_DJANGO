@@ -9,47 +9,74 @@ from datetime import datetime, timedelta
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 
+primitiveRefreshToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODY1OTY4MTEsImp0aSI6IjQ4MzRiMzRkLTMwNWEtNDNhZi1hY2Q3LWMwYWExNWM1ZTY0ZCIsImlhdCI6MTY4MTQxMjgxMSwiaXNzIjoiU29yYXJlRGF0YSIsInN1YiI6IlVzZXI6Njg1NDFkNmItZTUyYS00MWJlLTk2ZGMtZDY0ZGM4ZThiYWNiIn0.4uhwzwUQTdF5ebq1OWu9LutWJuk__5dAIBHhNZKS_mw"
+primitiveAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODE0MjAwMTEsImp0aSI6IjQ4MzRiMzRkLTMwNWEtNDNhZi1hY2Q3LWMwYWExNWM1ZTY0ZCIsImlhdCI6MTY4MTQxMjgxMSwiaXNzIjoiU29yYXJlRGF0YSIsInN1YiI6IlVzZXI6Njg1NDFkNmItZTUyYS00MWJlLTk2ZGMtZDY0ZGM4ZThiYWNiIn0.FdGAyB-o9HwwXUK1nWdLX8X4j6clcdFljJ1H9Oef_no"
+
+currentRefreshToken = None
+currentAccessToken = None
+
 
 def getPlayersData(names):
+    global currentRefreshToken, currentAccessToken,primitiveRefreshToken, primitiveAccessToken
     fallback_data = {}
-    i=0
+    i = 0
     for name in names:
         # Get ID of sorare DATA from name
-
         scraper = cloudscraper.create_scraper(disableCloudflareV1=True)  # returns a CloudScraper instance
         # Or: scraper = cloudscraper.CloudScraper()  # CloudScraper inherits from requests.Session
-        data = json.loads(
-            scraper.get("https://www.soraredata.com/apiv2/search/autocomplete?query=" + name.replace("-", " ")).text)
-        #
-        # print("NAME\n" + str(name))
-        # print("DATA\n" + str(data))
+        data = json.loads(scraper.get("https://www.soraredata.com/apiv2/search/autocomplete?query=" + name).text)
 
+        # Get data from sorare DATA
         id = data["player"][0]["item_id"]
+
+        # Refresh The Token
+        if currentRefreshToken is None:
+            scraper.cookies.set('sd-refresh-token', primitiveRefreshToken)
+        else:
+            scraper.cookies.set('sd-refresh-token', currentRefreshToken)
+
+        if currentAccessToken is None:
+            scraper.cookies.set('sd-access-token', primitiveAccessToken)
+        else:
+            scraper.cookies.set('sd-access-token', currentAccessToken)
+
+        refreshTokenPostData = {
+            'accessToken': currentAccessToken if currentAccessToken is not None else primitiveAccessToken,
+            'plan': 'free',
+            'refreshToken': currentRefreshToken if currentRefreshToken is not None else primitiveRefreshToken
+        }
+
+        refreshTokenResponse = scraper.post('https://www.soraredata.com/apiv2/auth/refreshTokens', data=refreshTokenPostData)
+
+        if refreshTokenResponse.status_code == 201:
+            refreshTokenData = json.loads(refreshTokenResponse.text)
+            currentRefreshToken = refreshTokenData["refreshToken"]
+            currentAccessToken = refreshTokenData["accessToken"]
+        else:
+            print("Error in refreshing token")
+            print(refreshTokenResponse.text)
+            print(refreshTokenResponse.status_code)
+
+        #Set the new token
+        scraper.cookies.set('sd-refresh-token', currentRefreshToken)
+        scraper.cookies.set('sd-access-token', currentAccessToken)
 
         test = scraper.get('https://www.soraredata.com/apiv2/players/info/' + id)
 
-        print("Fetching [%s,%s]" % (i,len(names)))
-
         data2 = json.loads(test.text)
 
-        # response = requests.get('https://www.soraredata.com/apiv2/search/autocomplete', params=params, headers=headers)
-        # id = response.json()["player"][0]["item_id"]
-        # print(id)
-        # Get all auctions data
-
         auction_data = data2["supply_and_averages"][0]["average"]
+
         fallback_data[name] = {
-            "3_days": auction_data[0]["Average"],
-            "7_days": auction_data[1]["Average"],
-            "14_days": auction_data[2]["Average"],
-            "30_days": auction_data[3]["Average"],
+            "3_days": auction_data[0]["Average"] if auction_data != None else -1,
+            "7_days": auction_data[1]["Average"] if auction_data != None else -1,
+            "14_days": auction_data[2]["Average"] if auction_data != None else -1,
+            "30_days": auction_data[3]["Average"] if auction_data != None else -1,
             "best_market_price": data2["best_market_prices"]["limited_best_price"]["Price"],
             "player_image": data2["player"]["TrimmedPictureUrl"],
             "player_id": id
         }
         i += 1
-        # Get all auctions for the card
-
     return fallback_data
 
 
@@ -107,7 +134,7 @@ def getExtraPlayerData(players_slug):
                 transaction["slug"] = card["slug"]
                 transactions.append(transaction)
 
-        transactions.sort(key=takeDate,reverse=True)
+        transactions.sort(key=takeDate, reverse=True)
         fallbackData[p_slug] = transactions
 
     return fallbackData

@@ -154,4 +154,5 @@ def get_all_bundles():
 
 
 if __name__ == '__main__':
+    print(get_all_bundles());
     pass
